@@ -27,7 +27,7 @@ const ModelControls = () => {
   // If no objects are loaded, show a message
   if (!objects.length && !isLoading) {
     return (
-      <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+      <Paper elevation={2} sx={{ p: 1, mb: 1 }}>
         <Typography variant="subtitle1" gutterBottom>
           Model Objects
         </Typography>
@@ -41,7 +41,7 @@ const ModelControls = () => {
   // If loading, show a loading indicator
   if (isLoading) {
     return (
-      <Paper elevation={2} sx={{ p: 2, mb: 2, display: 'flex', justifyContent: 'center' }}>
+      <Paper elevation={2} sx={{ p: 1, mb: 1, display: 'flex', justifyContent: 'center' }}>
         <CircularProgress size={24} sx={{ mr: 1 }} />
         <Typography variant="body1">Loading model objects...</Typography>
       </Paper>
@@ -64,20 +64,19 @@ const ModelControls = () => {
   };
 
   return (
-    <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+    <Paper elevation={2} sx={{ p: 1, mb: 1 }}>
       <Typography variant="subtitle1" gutterBottom>
         Model Objects ({objects.length})
       </Typography>
       
-      <Divider sx={{ my: 1 }} />
+      <Divider sx={{ my: 0.1 }} />
       
       <List dense>
         {objects.map((object) => (
-          <Box key={object.id} sx={{ mb: 2 }}>
+          <Box key={object.id} sx={{ mb: 1 }}>
             <ListItem>
               <ListItemText
                 primary={object.name}
-                secondary={`ID: ${object.id.substring(0, 8)}...`}
               />
               <ListItemSecondaryAction>
                 <Switch
@@ -89,7 +88,7 @@ const ModelControls = () => {
               </ListItemSecondaryAction>
             </ListItem>
             
-            <Box sx={{ pl: 2, pr: 2, mt: 1 }}>
+            <Box sx={{ pl: 1, pr: 1, mt: 1 }}>
               {object.hasTexture ? (
                 <Button
                   variant="outlined"

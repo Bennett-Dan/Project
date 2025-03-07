@@ -117,12 +117,20 @@ export const loadFBXModel = (url, sceneRef) => {
       url,
       (fbx) => {
         console.log('Model loaded successfully:', fbx);
-        model = fbx;
         
-        // Center the model
-        const box = new THREE.Box3().setFromObject(model);
+        // Create a new Group to serve as the container with centered pivot
+        model = new THREE.Group();
+        
+        // Calculate the center of the loaded model
+        const box = new THREE.Box3().setFromObject(fbx);
         const center = box.getCenter(new THREE.Vector3());
-        model.position.sub(center);
+        
+        // Instead of moving the model, move all its children relative to center
+        // This effectively recenters the pivot point
+        fbx.position.sub(center);
+        
+        // Add the fbx to our container group
+        model.add(fbx);
         
         // Scale model to fit the view
         const size = box.getSize(new THREE.Vector3());
@@ -140,7 +148,7 @@ export const loadFBXModel = (url, sceneRef) => {
         
         // Extract objects from the model
         const objects = [];
-        model.traverse((child) => {
+        fbx.traverse((child) => {
           if (child.isMesh) {
             // Store original material for later
             child.userData.originalMaterial = child.material;
@@ -161,7 +169,7 @@ export const loadFBXModel = (url, sceneRef) => {
         
         console.log(`Found ${objects.length} meshes in total`);
         
-        resolve({ model: fbx, objects });
+        resolve({ model: model, objects });
       },
       // Progress callback
       (xhr) => {

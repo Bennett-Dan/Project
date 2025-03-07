@@ -101,10 +101,10 @@ const ModelUploader = () => {
       // Load the model using the URL
       loadModelFromUrl(modelUrl, textureUrls);
       
-      setSuccess('Files loaded successfully. Rendering 3D model...');
+      setSuccess('loaded successfully. click load pls...');
     } catch (err) {
       console.error('Loading error:', err);
-      setError('Failed to load files. Please try again.');
+      setError('failed. try again pls.');
       resetModel();
     } finally {
       setLoading(false);
@@ -124,74 +124,80 @@ const ModelUploader = () => {
 
   return (
     <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        Manual Upload
-      </Typography>
-      
-      {/* Status messages */}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
-      
+
       {success && (
         <Alert severity="success" sx={{ mb: 2 }}>
           {success}
         </Alert>
       )}
       
-      {/* Model dropzone */}
       <Typography variant="subtitle1" gutterBottom>
-        3D Model (.fbx)
+        3D model (.fbx)
       </Typography>
       
+      {/* Model dropzone - very simple version */}
       <Box
         {...getModelRootProps()}
         className={`dropzone ${isModelDragActive ? 'active' : ''}`}
-        sx={{ mb: 2 }}
+        sx={{ 
+          mb: 1.5,
+          p: 1,
+          display: 'flex',
+          alignItems: 'center',
+          border: '1px dashed',
+          borderColor: isModelDragActive ? 'primary.main' : 'grey.300',
+          borderRadius: 1,
+          cursor: 'pointer',
+          height: '36px'
+        }}
       >
         <input {...getModelInputProps()} />
-        
-        {modelFile ? (
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <InsertDriveFileIcon sx={{ mr: 1 }} />
-            <Typography variant="body1">
-              {modelFile.name} ({(modelFile.size / 1024 / 1024).toFixed(2)} MB)
-            </Typography>
-          </Box>
-        ) : (
-          <Box sx={{ textAlign: 'center' }}>
-            <CloudUploadIcon sx={{ fontSize: 40, mb: 1 }} />
-            <Typography>
-              {isModelDragActive
-                ? 'Drop the FBX file here'
-                : 'Drag and drop an FBX file here, or click to select'}
-            </Typography>
-          </Box>
-        )}
+        <InsertDriveFileIcon 
+          color="primary" 
+          fontSize="small" 
+          sx={{ mr: 1 }} 
+        />
+        <Typography variant="body2">
+          {modelFile ? modelFile.name : 'Click to select model file'}
+        </Typography>
       </Box>
       
-      {/* Texture dropzone */}
       <Typography variant="subtitle1" gutterBottom>
         Textures (images)
       </Typography>
       
+      {/* Texture dropzone - very simple version */}
       <Box
         {...getTextureRootProps()}
         className={`dropzone ${isTextureDragActive ? 'active' : ''}`}
-        sx={{ mb: 2 }}
+        sx={{ 
+          mb: 1.5,
+          p: 1,
+          display: 'flex',
+          alignItems: 'center',
+          border: '1px dashed',
+          borderColor: isTextureDragActive ? 'primary.main' : 'grey.300',
+          borderRadius: 1,
+          cursor: 'pointer',
+          height: '36px'
+        }}
       >
         <input {...getTextureInputProps()} />
-        
-        <Box sx={{ textAlign: 'center' }}>
-          <ImageIcon sx={{ fontSize: 40, mb: 1 }} />
-          <Typography>
-            {isTextureDragActive
-              ? 'Drop the texture files here'
-              : 'Drag and drop texture images here, or click to select'}
-          </Typography>
-        </Box>
+        <ImageIcon 
+          color="primary" 
+          fontSize="small" 
+          sx={{ mr: 1 }} 
+        />
+        <Typography variant="body2">
+          {textureFiles.length > 0 
+            ? `${textureFiles.length} image(s) selected` 
+            : 'Click to select texture files'}
+        </Typography>
       </Box>
       
       {/* Texture files list */}

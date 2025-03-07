@@ -56,7 +56,7 @@ const HomePage = () => {
 
       {/* Right sidebar - Model controls (narrow) */}
       <Box sx={{ 
-        width: '220px', // Narrow controls panel
+        width: '250px', // Narrow controls panel
         p: 1, // Smaller padding
         overflowY: 'auto',
         borderLeft: '1px solid #ddd'
