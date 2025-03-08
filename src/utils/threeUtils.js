@@ -2,21 +2,13 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 
-
 let scene, camera, renderer, controls, model;
 let textureLoader;
 
-/**
- * Initialize a Three.js scene
- * @param {HTMLElement} container - The container element
- * @returns {Object} - Scene, camera, renderer, and controls
- */
 export const initThreeScene = (container) => {
-  // Create scene
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x212121);
+  scene.background = new THREE.Color(0xffffff);
 
-  // Create camera
   camera = new THREE.PerspectiveCamera(
     45,
     container.clientWidth / container.clientHeight,
@@ -25,41 +17,42 @@ export const initThreeScene = (container) => {
   );
   camera.position.set(5, 5, 5);
 
-  // Create renderer
-  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer = new THREE.WebGLRenderer({ 
+    antialias: true,
+    powerPreference: 'high-performance',
+    preserveDrawingBuffer: true 
+  });
   renderer.setSize(container.clientWidth, container.clientHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.shadowMap.enabled = true;
-  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   
-  // Clear container and append renderer
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.NoToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  
   while (container.firstChild) {
     container.removeChild(container.firstChild);
   }
   container.appendChild(renderer.domElement);
 
-  // Add orbit controls
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
 
-  // Add lights
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
   scene.add(ambientLight);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-  directionalLight.position.set(1, 1, 1).normalize();
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+  directionalLight.position.set(5, 10, 7);
   directionalLight.castShadow = true;
+  directionalLight.shadow.mapSize.width = 2048;
+  directionalLight.shadow.mapSize.height = 2048;
   scene.add(directionalLight);
 
-  const secondaryLight = new THREE.DirectionalLight(0xffffff, 0.8);
-  secondaryLight.position.set(0, 1, 0).normalize();
-  scene.add(secondaryLight);
-
-  // Create texture loader
   textureLoader = new THREE.TextureLoader();
 
-  // Handle window resize
   const handleResize = () => {
     camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
@@ -67,7 +60,6 @@ export const initThreeScene = (container) => {
   };
   window.addEventListener('resize', handleResize);
 
-  // Animation loop
   const animate = () => {
     requestAnimationFrame(animate);
     controls.update();
@@ -83,30 +75,19 @@ export const initThreeScene = (container) => {
     cleanup: () => {
       window.removeEventListener('resize', handleResize);
       
-      // Clean up scene
       if (model) {
         scene.remove(model);
         model = null;
       }
       
-      // Dispose renderer
       renderer.dispose();
-      
-      // Dispose controls
       controls.dispose();
     }
   };
 };
 
-/**
- * Load an FBX model from URL
- * @param {string} url - URL to the FBX model
- * @param {THREE.Scene} sceneRef - Three.js scene reference (not used, using global scene)
- * @returns {Promise<Object>} - Promise resolving to the loaded model and objects
- */
 export const loadFBXModel = (url, sceneRef) => {
   return new Promise((resolve, reject) => {
-    // Clear existing model if present
     if (model) {
       scene.remove(model);
       model = null;
@@ -118,21 +99,15 @@ export const loadFBXModel = (url, sceneRef) => {
       (fbx) => {
         console.log('Model loaded successfully:', fbx);
         
-        // Create a new Group to serve as the container with centered pivot
         model = new THREE.Group();
         
-        // Calculate the center of the loaded model
         const box = new THREE.Box3().setFromObject(fbx);
         const center = box.getCenter(new THREE.Vector3());
         
-        // Instead of moving the model, move all its children relative to center
-        // This effectively recenters the pivot point
         fbx.position.sub(center);
         
-        // Add the fbx to our container group
         model.add(fbx);
         
-        // Scale model to fit the view
         const size = box.getSize(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z);
         if (maxDim > 10) {
@@ -140,20 +115,15 @@ export const loadFBXModel = (url, sceneRef) => {
           model.scale.set(scale, scale, scale);
         }
         
-        // Add model to scene
         scene.add(model);
         
-        // Reset camera and controls to focus on model
         controls.reset();
         
-        // Extract objects from the model
         const objects = [];
         fbx.traverse((child) => {
           if (child.isMesh) {
-            // Store original material for later
             child.userData.originalMaterial = child.material;
             
-            // Add to objects array
             objects.push({
               id: child.uuid,
               name: child.name || `Object_${objects.length + 1}`,
@@ -171,11 +141,9 @@ export const loadFBXModel = (url, sceneRef) => {
         
         resolve({ model: model, objects });
       },
-      // Progress callback
       (xhr) => {
         console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
       },
-      // Error callback
       (error) => {
         console.error('Error loading FBX model:', error);
         reject(error);
@@ -184,12 +152,6 @@ export const loadFBXModel = (url, sceneRef) => {
   });
 };
 
-/**
- * Apply texture to a mesh
- * @param {THREE.Mesh} meshObject - The mesh to apply texture to
- * @param {string} textureUrl - URL to the texture image
- * @returns {Promise<THREE.Material>} - Promise resolving to the new material
- */
 export const applyTextureToMesh = (meshObject, textureUrl) => {
   return new Promise((resolve, reject) => {
     if (!textureUrl) {
@@ -200,40 +162,40 @@ export const applyTextureToMesh = (meshObject, textureUrl) => {
     textureLoader.load(
       textureUrl,
       (loadedTexture) => {
-        // Apply texture settings from app.js
         loadedTexture.encoding = THREE.sRGBEncoding;
-        const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
-        loadedTexture.anisotropy = maxAnisotropy;
+        loadedTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
         loadedTexture.generateMipmaps = true;
-        loadedTexture.minFilter = THREE.LinearMipmapLinearFilter;
-        
-        loadedTexture.wrapS = THREE.RepeatWrapping;
-        loadedTexture.wrapT = THREE.RepeatWrapping;
-        loadedTexture.repeat.y = 1;
+        loadedTexture.minFilter = THREE.LinearFilter;
+        loadedTexture.magFilter = THREE.LinearFilter;
+        loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
+        loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
         
         console.log('Texture loaded successfully:', loadedTexture);
         
-        // Create material matching app.js
         const newMaterial = new THREE.MeshBasicMaterial({
           map: loadedTexture,
           transparent: true,
-          roughness: 0.3,
-          metalness: 0.0,
-          opacity: 1.0
+          side: THREE.DoubleSide,
+          alphaTest: 0.1,
         });
         
-        console.log('Applying texture to mesh:', meshObject.name || 'Unnamed mesh');
+        console.log('Applying exact image texture to mesh:', meshObject.name || 'Unnamed mesh');
         
-        // Apply the new material to the mesh
+        if (!meshObject.userData.originalMaterial) {
+          meshObject.userData.originalMaterial = meshObject.material ? 
+            (Array.isArray(meshObject.material) ? 
+              meshObject.material.map(m => m.clone()) : 
+              meshObject.material.clone()) : 
+            null;
+        }
+        
         if (Array.isArray(meshObject.material)) {
-          // For multi-material objects, replace all materials
           const materials = [];
           for (let i = 0; i < meshObject.material.length; i++) {
             materials.push(newMaterial.clone());
           }
           meshObject.material = materials;
         } else {
-          // For single material objects
           meshObject.material = newMaterial;
         }
         
@@ -248,15 +210,9 @@ export const applyTextureToMesh = (meshObject, textureUrl) => {
   });
 };
 
-/**
- * Remove texture from a mesh
- * @param {THREE.Mesh} meshObject - The mesh to remove texture from
- */
 export const removeTextureFromMesh = (meshObject) => {
-  // Restore original material if available
   if (meshObject.userData.originalMaterial) {
     if (Array.isArray(meshObject.material)) {
-      // For multi-material objects
       const origMaterials = Array.isArray(meshObject.userData.originalMaterial) 
         ? meshObject.userData.originalMaterial 
         : Array(meshObject.material.length).fill(meshObject.userData.originalMaterial);
@@ -267,22 +223,30 @@ export const removeTextureFromMesh = (meshObject) => {
       }
       meshObject.material = materials;
     } else {
-      // For single material objects
       meshObject.material = meshObject.userData.originalMaterial.clone();
     }
   } else {
-    // Create a default material
     meshObject.material = new THREE.MeshStandardMaterial({
       color: 0xcccccc
     });
   }
 };
 
-/**
- * Toggle mesh visibility
- * @param {THREE.Mesh} meshObject - The mesh to toggle visibility
- * @param {boolean} visible - Whether the mesh should be visible
- */
 export const toggleMeshVisibility = (meshObject, visible) => {
   meshObject.visible = visible;
-}; 
+};
+
+export const takeTextureScreenshot = () => {
+  const originalWidth = renderer.domElement.width;
+  const originalHeight = renderer.domElement.height;
+  
+  renderer.setSize(2000, 2000);
+  
+  renderer.render(scene, camera);
+  
+  const dataURL = renderer.domElement.toDataURL('image/png');
+  
+  renderer.setSize(originalWidth, originalHeight);
+  
+  return dataURL;
+};

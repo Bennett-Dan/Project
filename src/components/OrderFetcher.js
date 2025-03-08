@@ -16,7 +16,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { useModel } from '../contexts/ModelContext';
 import apiService from '../services/api';
 
-const OrderFetcher = () => {
+const OrderFetcher = ({ onOrderLoaded, compact = false }) => {
   const { settings } = useSettings();
   const { loadModelFromUrl, resetModel } = useModel();
   const [orderId, setOrderId] = useState('');
@@ -62,67 +62,54 @@ const OrderFetcher = () => {
       
       // Check if response is successful
       if (response.result !== 'success') {
-        console.log("failed")
         throw new Error(response.response || 'Failed to fetch order data');
       }
-      console.log("succedd")
-      // Extract model and texture URLs
+      
+      // Extract order data
       const orderData = response.response;
       
-      //let's parse!!
-      const modelUrl = orderData.items?.[0]?.full_artwork || null;
-      const textureUrls = [];
-      
-      if (orderData.items) {
-        orderData.items.forEach(item => {
-          if (item.artwork && !textureUrls.includes(item.artwork)) {
-            textureUrls.push(item.artwork);
-          }
-          if (item.thumbnail_url && !textureUrls.includes(item.thumbnail_url)) {
-            textureUrls.push(item.thumbnail_url);
-          }
-        });
+      // Pass order data to parent component if callback exists
+      if (onOrderLoaded && typeof onOrderLoaded === 'function') {
+        onOrderLoaded(orderData);
       }
       
-      if (!modelUrl) {
-        throw new Error('No model found in order data');
-      }
-      
-      // Load the model
-      loadModelFromUrl(modelUrl, textureUrls);
-      
-      setSuccess(`Order #${orderId} fetched successfully. Loading 3D model...`);
+      setSuccess(`Order #${orderId} fetched successfully.`);
     } catch (err) {
       console.error('Fetch error:', err);
       setError(err.message || 'Failed to fetch order data. Please try again.');
       resetModel();
+      
+      // Reset order data on error
+      if (onOrderLoaded && typeof onOrderLoaded === 'function') {
+        onOrderLoaded(null);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
-      <Typography variant="h6" gutterBottom>
+    <Paper elevation={2} sx={{ p: compact ? 1 : 2, mb: compact ? 1 : 2 }}>
+      <Typography variant={compact ? "subtitle2" : "h6"} gutterBottom>
         Fetch by Order ID
       </Typography>
       
       {/* Status messages */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 1, py: compact ? 0 : 1, fontSize: compact ? '0.75rem' : '0.875rem' }}>
           {error}
         </Alert>
       )}
       
       {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
+        <Alert severity="success" sx={{ mb: 1, py: compact ? 0 : 1, fontSize: compact ? '0.75rem' : '0.875rem' }}>
           {success}
         </Alert>
       )}
       
       {!settings.isConfigured && (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          API settings are not configured. Please go to the Settings page.
+        <Alert severity="warning" sx={{ mb: 1, py: compact ? 0 : 1, fontSize: compact ? '0.75rem' : '0.875rem' }}>
+          Configure API in Settings
         </Alert>
       )}
       
@@ -134,7 +121,16 @@ const OrderFetcher = () => {
         value={orderId}
         onChange={handleOrderIdChange}
         disabled={loading || !settings.isConfigured}
-        sx={{ mb: 2 }}
+        sx={{ 
+          mb: 1,
+          '& .MuiInputLabel-root': {
+            fontSize: compact ? '0.75rem' : '0.875rem'
+          },
+          '& .MuiOutlinedInput-root': {
+            fontSize: compact ? '0.75rem' : '0.875rem'
+          }
+        }}
+        size={compact ? "small" : "medium"}
       />
       
       {/* Test mode toggle */}
@@ -144,13 +140,19 @@ const OrderFetcher = () => {
             checked={isTest}
             onChange={handleTestModeToggle}
             disabled={loading}
+            size={compact ? "small" : "medium"}
           />
         }
         label="Test Mode"
-        sx={{ mb: 2 }}
+        sx={{ 
+          mb: 1,
+          '& .MuiFormControlLabel-label': {
+            fontSize: compact ? '0.75rem' : '0.875rem'
+          }
+        }}
       />
       
-      <Divider sx={{ my: 2 }} />
+      <Divider sx={{ my: compact ? 0.5 : 2 }} />
       
       {/* Action button */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -159,7 +161,9 @@ const OrderFetcher = () => {
           color="primary"
           onClick={handleFetch}
           disabled={loading || !orderId || !settings.isConfigured}
-          startIcon={loading ? <CircularProgress size={20} /> : <SearchIcon />}
+          startIcon={loading ? <CircularProgress size={compact ? 16 : 20} /> : <SearchIcon fontSize={compact ? "small" : "medium"} />}
+          size={compact ? "small" : "medium"}
+          sx={{ fontSize: compact ? '0.75rem' : '0.875rem' }}
         >
           {loading ? 'Fetching...' : 'Fetch Order'}
         </Button>

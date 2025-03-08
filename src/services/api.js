@@ -1,33 +1,28 @@
-import axios from 'axios';
-
-// could be used if we make a server for file uploads
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
+// Use your server as the base URL
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://07dd-37-120-156-98.ngrok-free.app';
 
 const apiService = {
   // Test API connection settings
   testConnection: async (apiKey, apiUrl) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/proxy`, {
-        params: {
-          url: apiUrl,
-          params: JSON.stringify({
-            action: 'viewOrder',
-            orderId: 1
-          })
-        },
+      // Use your server's test endpoint
+      const response = await fetch(`${API_BASE_URL}/api/settings/test`, {
+        method: 'POST',
         headers: {
-          'Authorization': apiKey,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ apiKey, apiUrl })
       });
       
-      const isSuccess = response.data && (response.data.result === 'success' || 
-        (response.data.result === 'error' && response.data.response?.includes('No match')));
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
       
       return {
-        success: isSuccess,
-        message: isSuccess ? 'Connection successful' : 'Connection failed'
+        success: data.success,
+        message: data.message || 'Connection test completed'
       };
     } catch (error) {
       console.error('API Connection error:', error);
@@ -38,76 +33,77 @@ const apiService = {
     }
   },
 
-  // Get order by ID - Direct approach like Python script
+  // Get order by ID - Using your server as proxy
   getOrderById: async (orderId, apiKey, apiUrl, isTest = false) => {
     try {
-      console.log(`Fetching order ${orderId} from ${apiUrl}`);
+      console.log(`Fetching order ${orderId} through server proxy`);
       
-      // Direct request like the Python script 
-      const response = await axios.get(
-        `${apiUrl}`, 
-        {
-          params: {
-            action: 'viewOrder',
-            orderId: orderId,
-            test: isTest ? 1 : 0
-          },
-          headers: {
-            'HTTP_AUTHORIZATION': apiKey,  // Use correct header name
-            'Content-Type': 'application/json'
-          }
+      // Use your server's order endpoint
+      const response = await fetch(`${API_BASE_URL}/api/order/${orderId}?test=${isTest ? 'true' : 'false'}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,      // Your server expects this header
+          'x-api-url': apiUrl       // Your server expects this header
         }
-      );
+      });
       
-      return response.data;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("---------------------", data.response);
+      return data;
     } catch (error) {
       console.error('Error fetching order:', error);
-      if (error.response) {
-        return error.response.data;
-      } else {
-        throw new Error(error.message || 'Failed to fetch order data');
-      }
+      throw new Error(error.message || 'Failed to fetch order data');
     }
   },
-
-
-
   
-  //if we need manuall server for Uploading model file
+  // Upload model file - Already using your server
   uploadModel: async (file) => {
     const formData = new FormData();
     formData.append('model', file);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/upload/model`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      const response = await fetch(`${API_BASE_URL}/upload/model`, {
+        method: 'POST',
+        body: formData
       });
-      return response.data;
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
     } catch (error) {
-      throw error.response?.data || error.message;
+      throw error.message || 'Failed to upload model';
     }
   },
 
-  // Upload texture file
+  // Upload texture file - Already using your server
   uploadTexture: async (file) => {
     const formData = new FormData();
     formData.append('texture', file);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/upload/texture`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      const response = await fetch(`${API_BASE_URL}/upload/texture`, {
+        method: 'POST',
+        body: formData
       });
-      return response.data;
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
     } catch (error) {
-      throw error.response?.data || error.message;
+      throw error.message || 'Failed to upload texture';
     }
   },
 
-  // Upload multiple files (model + textures)
+  // Upload multiple files (model + textures) - Direct viewing without server
   uploadMultiple: async (modelFile, textureFiles = []) => {
     // For direct viewing without server upload, create local blob URLs
     const modelUrl = URL.createObjectURL(modelFile);
@@ -118,6 +114,29 @@ const apiService = {
       model: { path: modelUrl },
       textures: texturePaths.map(path => ({ path }))
     };
+  },
+
+  // Add this new function to apiService
+  getProxiedUrl: (url) => {
+    // Encode the URL properly for use in a query string
+    const encodedUrl = encodeURIComponent(url);
+    return `${API_BASE_URL}/api/proxy-model?url=${encodedUrl}`;
+  },
+
+  // General file proxy function
+  getProxiedFileUrl: (url) => {
+    const encodedUrl = encodeURIComponent(url);
+    return `${API_BASE_URL}/api/proxy-file?url=${encodedUrl}`;
+  },
+
+  // Model-specific proxy (same implementation, for clarity)
+  getProxiedModelUrl: (url) => {
+    return apiService.getProxiedFileUrl(url);
+  },
+
+  // Texture-specific proxy
+  getProxiedTextureUrl: (url) => {
+    return apiService.getProxiedFileUrl(url);
   }
 };
 

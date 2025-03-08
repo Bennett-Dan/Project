@@ -29,8 +29,7 @@ const ModelViewer = () => {
 
   // Load model when URL changes
   useEffect(() => {
-    // If no URL or already loaded this URL, don't do anything
-    if (!modelData.modelUrl || !sceneRef.current || modelData.modelUrl === loadedUrlRef.current) {
+    if (!modelData.modelUrl || !sceneRef.current) {
       return;
     }
     
@@ -65,9 +64,7 @@ const ModelViewer = () => {
     };
 
     loadModel();
-
-    // Make sure we don't include setModelObjects in the dependency array
-  }, [modelData.modelUrl]); // Only depend on the URL, not on the setter functions
+  }, [modelData.modelUrl]);
 
   // Apply texture changes
   useEffect(() => {
@@ -101,6 +98,37 @@ const ModelViewer = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Add performance monitoring
+  useEffect(() => {
+    let frameCount = 0;
+    let lastTime = performance.now();
+    let fps = 0;
+    
+    const checkPerformance = () => {
+      frameCount++;
+      const currentTime = performance.now();
+      
+      if (currentTime - lastTime >= 1000) {
+        fps = frameCount;
+        frameCount = 0;
+        lastTime = currentTime;
+        
+        // If FPS is low, reduce quality
+        if (fps < 30 && sceneRef.current && sceneRef.current.renderer) {
+          sceneRef.current.renderer.setPixelRatio(1);
+        }
+      }
+      
+      requestAnimationFrame(checkPerformance);
+    };
+    
+    const perfCheck = requestAnimationFrame(checkPerformance);
+    
+    return () => {
+      cancelAnimationFrame(perfCheck);
+    };
+  }, []);
+
   return (
     <Box
       sx={{
@@ -115,7 +143,7 @@ const ModelViewer = () => {
       }}
     >
       {/* Loading indicator */}
-      {loading && (
+      {(loading || modelData.isLoading) && (
         <Box
           sx={{
             position: 'absolute',
@@ -140,7 +168,7 @@ const ModelViewer = () => {
       )}
 
       {/* Error message */}
-      {error && !loading && (
+      {error && !loading && !modelData.isLoading && (
         <Box
           sx={{
             position: 'absolute',
@@ -164,7 +192,7 @@ const ModelViewer = () => {
       )}
 
       {/* No model message */}
-      {!modelData.modelUrl && !loading && !error && (
+      {!modelData.modelUrl && !loading && !error && !modelData.isLoading && (
         <Box
           sx={{
             position: 'absolute',

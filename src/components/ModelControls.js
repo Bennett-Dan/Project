@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { useModel } from '../contexts/ModelContext';
 
-const ModelControls = () => {
+const ModelControls = ({ compact = false }) => {
   const { 
     modelData, 
     toggleObjectVisibility, 
@@ -64,69 +64,103 @@ const ModelControls = () => {
   };
 
   return (
-    <Paper elevation={2} sx={{ p: 1, mb: 1 }}>
-      <Typography variant="subtitle1" gutterBottom>
+    <Box>
+      <Typography variant={compact ? "subtitle2" : "subtitle1"} color="text.secondary" sx={{ 
+        mb: 0.5, 
+        fontWeight: 500,
+        fontSize: compact ? '0.75rem' : '0.875rem'
+      }}>
         Model Objects ({objects.length})
       </Typography>
       
-      <Divider sx={{ my: 0.1 }} />
-      
-      <List dense>
-        {objects.map((object) => (
-          <Box key={object.id} sx={{ mb: 1 }}>
-            <ListItem>
-              <ListItemText
-                primary={object.name}
-              />
-              <ListItemSecondaryAction>
-                <Switch
-                  edge="end"
-                  checked={object.visible}
-                  onChange={() => handleVisibilityToggle(object.id)}
-                  inputProps={{ 'aria-labelledby': `visibility-switch-${object.id}` }}
-                />
-              </ListItemSecondaryAction>
-            </ListItem>
-            
-            <Box sx={{ pl: 1, pr: 1, mt: 1 }}>
-              {object.hasTexture ? (
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  size="small"
-                  fullWidth
-                  onClick={() => handleRemoveTexture(object.id)}
-                >
-                  Remove Texture
-                </Button>
-              ) : (
-                textureUrls.length > 0 ? (
-                  textureUrls.map((textureUrl, index) => (
-                    <Button
-                      key={index}
-                      variant="outlined"
-                      color="primary"
-                      size="small"
-                      fullWidth
-                      sx={{ mb: 1 }}
-                      onClick={() => handleApplyTexture(object.id, textureUrl)}
-                    >
-                      Apply Texture {index + 1}
-                    </Button>
-                  ))
-                ) : (
-                  <Typography variant="caption" color="text.secondary">
-                    No textures available
-                  </Typography>
-                )
-              )}
-            </Box>
-            
-            <Divider sx={{ mt: 1 }} />
+      {objects.map((object) => (
+        <Paper 
+          key={object.id} 
+          elevation={0}
+          sx={{ 
+            mb: 1, 
+            overflow: 'hidden',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 1,
+          }}
+        >
+          <Box sx={{ 
+            p: compact ? 0.5 : 1, 
+            display: 'flex', 
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            bgcolor: object.visible ? 'rgba(58, 134, 255, 0.04)' : 'transparent',
+          }}>
+            <Typography 
+              variant={compact ? "caption" : "body2"}
+              sx={{ 
+                fontWeight: 500,
+                color: object.visible ? 'primary.main' : 'text.primary',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: compact ? '100px' : '170px'
+              }}
+            >
+              {object.name}
+            </Typography>
+            <Switch
+              size="small"
+              checked={object.visible}
+              onChange={() => handleVisibilityToggle(object.id)}
+              color="primary"
+            />
           </Box>
-        ))}
-      </List>
-    </Paper>
+          
+          <Divider />
+          
+          <Box sx={{ p: compact ? 0.5 : 1 }}>
+            {object.hasTexture ? (
+              <Button
+                variant="outlined"
+                color="secondary"
+                size="small"
+                fullWidth
+                onClick={() => handleRemoveTexture(object.id)}
+                sx={{ 
+                  borderRadius: 1,
+                  height: compact ? '24px' : '32px',
+                  fontSize: compact ? '0.65rem' : '0.75rem',
+                }}
+              >
+                Remove Texture
+              </Button>
+            ) : (
+              textureUrls.length > 0 ? (
+                textureUrls.map((textureUrl, index) => (
+                  <Button
+                    key={index}
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    fullWidth
+                    sx={{ 
+                      mb: index < textureUrls.length - 1 ? 0.5 : 0,
+                      borderRadius: 1,
+                      height: compact ? '24px' : '32px',
+                      fontSize: compact ? '0.65rem' : '0.75rem'
+                    }}
+                    onClick={() => handleApplyTexture(object.id, textureUrl)}
+                  >
+                    Apply Texture {index + 1}
+                  </Button>
+                ))
+              ) : (
+                <Typography variant="caption" color="text.secondary">
+                  No textures available
+                </Typography>
+              )
+            )}
+          </Box>
+        </Paper>
+      ))}
+    </Box>
   );
 };
 

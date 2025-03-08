@@ -21,7 +21,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { useModel } from '../contexts/ModelContext';
 import apiService from '../services/api';
 
-const ModelUploader = () => {
+const ModelUploader = ({ compact = false }) => {
   const { loadModelFromUrl, resetModel } = useModel();
   const [modelFile, setModelFile] = useState(null);
   const [textureFiles, setTextureFiles] = useState([]);
@@ -101,10 +101,9 @@ const ModelUploader = () => {
       // Load the model using the URL
       loadModelFromUrl(modelUrl, textureUrls);
       
-      setSuccess('loaded successfully. click load pls...');
     } catch (err) {
       console.error('Loading error:', err);
-      setError('failed. try again pls.');
+      setError('Ooops. Try again Please.');
       resetModel();
     } finally {
       setLoading(false);
@@ -123,106 +122,155 @@ const ModelUploader = () => {
   }, [localUrls]);
 
   return (
-    <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+    <Paper elevation={2} sx={{ p: compact ? 1 : 2, mb: compact ? 1 : 2 }}>
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 1, py: compact ? 0 : 1 }}>
           {error}
         </Alert>
       )}
 
       {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
+        <Alert severity="success" sx={{ mb: 1, py: compact ? 0 : 1 }}>
           {success}
         </Alert>
       )}
       
-      <Typography variant="subtitle1" gutterBottom>
+      <Typography variant={compact ? "subtitle2" : "subtitle1"} gutterBottom>
         3D model (.fbx)
       </Typography>
       
-      {/* Model dropzone - very simple version */}
+      {/* Model dropzone - ultra compact version */}
       <Box
         {...getModelRootProps()}
         className={`dropzone ${isModelDragActive ? 'active' : ''}`}
         sx={{ 
-          mb: 1.5,
-          p: 1,
+          mb: 1,
+          p: 0.75,
           display: 'flex',
           alignItems: 'center',
-          border: '1px dashed',
-          borderColor: isModelDragActive ? 'primary.main' : 'grey.300',
+          border: '1px solid',
+          borderColor: 'grey.300',
           borderRadius: 1,
           cursor: 'pointer',
-          height: '36px'
+          height: compact ? '32px' : '40px',
+          bgcolor: 'background.paper',
+          fontSize: compact ? '0.75rem' : '0.875rem'
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          document.getElementById('model-file-input').click();
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
         }}
       >
-        <input {...getModelInputProps()} />
+        <input 
+          {...getModelInputProps()} 
+          id="model-file-input"
+          onClick={(e) => e.stopPropagation()}
+        />
         <InsertDriveFileIcon 
           color="primary" 
-          fontSize="small" 
-          sx={{ mr: 1 }} 
+          fontSize={compact ? "small" : "medium"} 
+          sx={{ mr: 0.5, fontSize: compact ? '0.9rem' : '1.2rem' }} 
         />
-        <Typography variant="body2">
-          {modelFile ? modelFile.name : 'Click to select model file'}
+        <Typography variant="body2" sx={{ 
+          flexGrow: 1, 
+          overflow: 'hidden', 
+          textOverflow: 'ellipsis', 
+          whiteSpace: 'nowrap',
+          fontSize: compact ? '0.75rem' : '0.875rem'
+        }}>
+          {modelFile ? modelFile.name : 'Select model (.fbx)'}
         </Typography>
       </Box>
-      
-      <Typography variant="subtitle1" gutterBottom>
-        Textures (images)
+
+      <Typography variant={compact ? "subtitle2" : "subtitle1"} gutterBottom>
+        Textures
       </Typography>
-      
-      {/* Texture dropzone - very simple version */}
+
+      {/* Texture dropzone - ultra compact version */}
       <Box
         {...getTextureRootProps()}
         className={`dropzone ${isTextureDragActive ? 'active' : ''}`}
         sx={{ 
-          mb: 1.5,
-          p: 1,
+          mb: 1,
+          p: 0.75,
           display: 'flex',
           alignItems: 'center',
-          border: '1px dashed',
-          borderColor: isTextureDragActive ? 'primary.main' : 'grey.300',
+          border: '1px solid',
+          borderColor: 'grey.300',
           borderRadius: 1,
           cursor: 'pointer',
-          height: '36px'
+          height: compact ? '32px' : '40px',
+          bgcolor: 'background.paper'
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          document.getElementById('texture-file-input').click();
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
         }}
       >
-        <input {...getTextureInputProps()} />
+        <input 
+          {...getTextureInputProps()} 
+          id="texture-file-input"
+          onClick={(e) => e.stopPropagation()}
+        />
         <ImageIcon 
           color="primary" 
-          fontSize="small" 
-          sx={{ mr: 1 }} 
+          fontSize={compact ? "small" : "medium"} 
+          sx={{ mr: 0.5, fontSize: compact ? '0.9rem' : '1.2rem' }} 
         />
-        <Typography variant="body2">
+        <Typography variant="body2" sx={{ 
+          flexGrow: 1, 
+          overflow: 'hidden', 
+          textOverflow: 'ellipsis', 
+          whiteSpace: 'nowrap',
+          fontSize: compact ? '0.75rem' : '0.875rem'
+        }}>
           {textureFiles.length > 0 
-            ? `${textureFiles.length} image(s) selected` 
-            : 'Click to select texture files'}
+            ? `${textureFiles.length} image(s)` 
+            : 'Select textures'}
         </Typography>
       </Box>
       
-      {/* Texture files list */}
+      {/* Texture files list - extremely compact in compact mode */}
       {textureFiles.length > 0 && (
         <>
-          <Typography variant="subtitle2" gutterBottom>
-            Selected Textures ({textureFiles.length})
+          <Typography variant={compact ? "caption" : "subtitle2"} gutterBottom>
+            Selected ({textureFiles.length})
           </Typography>
           
-          <List dense sx={{ mb: 2 }}>
+          <List dense sx={{ 
+            mb: compact ? 0.5 : 2,
+            '& .MuiListItem-root': {
+              py: compact ? 0 : 0.5
+            }
+          }}>
             {textureFiles.map((file, index) => (
-              <ListItem key={index}>
-                <ListItemIcon>
-                  <ImageIcon />
+              <ListItem key={index} sx={{ py: compact ? 0 : 1 }}>
+                <ListItemIcon sx={{ minWidth: compact ? 30 : 40 }}>
+                  <ImageIcon fontSize={compact ? "small" : "medium"} />
                 </ListItemIcon>
                 <ListItemText
                   primary={file.name}
-                  secondary={`${(file.size / 1024).toFixed(2)} KB`}
+                  secondary={compact ? null : `${(file.size / 1024).toFixed(2)} KB`}
+                  primaryTypographyProps={{ 
+                    noWrap: true,
+                    fontSize: compact ? '0.75rem' : '0.875rem'
+                  }}
                 />
                 <IconButton
                   edge="end"
                   aria-label="delete"
                   onClick={() => removeTextureFile(index)}
+                  size={compact ? "small" : "medium"}
                 >
-                  <DeleteIcon />
+                  <DeleteIcon fontSize={compact ? "small" : "medium"} />
                 </IconButton>
               </ListItem>
             ))}
@@ -230,14 +278,16 @@ const ModelUploader = () => {
         </>
       )}
       
-      <Divider sx={{ my: 2 }} />
+      <Divider sx={{ my: compact ? 0.5 : 2 }} />
       
-      {/* Action buttons */}
+      {/* Action buttons - more compact */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <Button
           variant="outlined"
           onClick={clearFiles}
           disabled={loading || (!modelFile && textureFiles.length === 0)}
+          size={compact ? "small" : "medium"}
+          sx={{ fontSize: compact ? '0.75rem' : '0.875rem' }}
         >
           Clear
         </Button>
@@ -247,9 +297,11 @@ const ModelUploader = () => {
           color="primary"
           onClick={handleUpload}
           disabled={loading || !modelFile}
-          startIcon={loading ? <CircularProgress size={20} /> : null}
+          startIcon={loading ? <CircularProgress size={compact ? 16 : 20} /> : null}
+          size={compact ? "small" : "medium"}
+          sx={{ fontSize: compact ? '0.75rem' : '0.875rem' }}
         >
-          {loading ? 'Loading...' : 'Upload & View'}
+          {loading ? 'Loading...' : 'View'}
         </Button>
       </Box>
     </Paper>
