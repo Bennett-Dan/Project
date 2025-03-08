@@ -47,7 +47,7 @@ const apiService = {
           'x-api-url': apiUrl       // Your server expects this header
         }
       });
-      
+      console.log("response", response);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
